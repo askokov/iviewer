@@ -1,19 +1,22 @@
 package com.askokov.module;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import android.content.res.AssetManager;
+import android.app.ActionBar;
+import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import com.askokov.module.order.OrderManager;
-import com.askokov.module.order.ReverseManager;
+import com.askokov.module.order.SerialManager;
 
 /**
  * Main activity for application
@@ -21,27 +24,72 @@ import com.askokov.module.order.ReverseManager;
 public class MainActivity extends FragmentActivity {
 
     private static final String TAG = "MainActivity";
-    private static final String POSITION = "position";
+    private static final String POSITION = "Position";
+    private static final String PAGER_TYPE = "PagerType";
+    private static final String MEDIA_STORAGE = "MediaStorage";
+    private static final String CAMERA = "/Camera/";
+    private static final String EXT_JPG = ".jpg";
+    private static final String EXT_3GP = ".3gp";
+    private static final String EXT_MP4 = ".mp4";
+
+    public enum PagerType {
+        PHOTO,
+        VIDEO
+    }
 
     private ViewPager pager;
+    private PagerAdapter pagerAdapter;
+    private SeekBar seekBar;
+    private PagerType pagerType = PagerType.PHOTO;
+    private File mediaStorage;
+    private MenuItem menuPhoto;
+    private MenuItem menuVideo;
+    private TextView textHint;
+    private TextView textStatus;
+    private List<String> list = new ArrayList<String>();
+    private int listPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Log.i(TAG, "onCreate");
 
         setContentView(R.layout.main_layout);
-        Log.i(TAG, "setContentView");
+        restoreOrCreate(savedInstanceState);
 
-        final List<String> list = getImageList(getAssets());
-        int position = savedInstanceState != null ? savedInstanceState.getInt(POSITION, 0) : 0;
-        OrderManager orderManager = new ReverseManager(list.size());
+        textStatus = (TextView) findViewById(R.id.textStatus);
+        textHint = (TextView) findViewById(R.id.textHint);
 
-        final SeekBar seekBar = (SeekBar) findViewById(R.id.seekBar);
-        seekBar.setMax(list.size() - 1);
-        seekBar.setProgress(position);
+        OrderManager orderManager = new SerialManager();
+        pagerAdapter = new PagerAdapter(getSupportFragmentManager(), list, orderManager,
+            mediaStorage.getAbsolutePath() + CAMERA);
+        pagerAdapter.setType(pagerType);
 
+        pager = (ViewPager) findViewById(R.id.pager);
+        pager.setPageMargin(10);
+        pager.setCurrentItem(listPosition);
+        pager.setAdapter(pagerAdapter);
+
+        pager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(final int i, final float v, final int i1) {
+                //Log.i(TAG, "onPageScrolled: i=" + i + ", v=" + v + ", i1=" + i1);
+            }
+
+            @Override
+            public void onPageSelected(final int i) {
+                Log.i(TAG, "onPageSelected: " + i);
+                seekBar.setProgress(i);
+                textHint.setText(list.get(pagerAdapter.getDataPosition(i)));
+            }
+
+            @Override
+            public void onPageScrollStateChanged(final int i) {
+                //Log.i(TAG, "onPageScrollStateChanged: " + i);
+            }
+        });
+
+        seekBar = (SeekBar) findViewById(R.id.seekBar);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(final SeekBar seekBar, final int progress, final boolean fromUser) {
@@ -51,97 +99,168 @@ public class MainActivity extends FragmentActivity {
 
             @Override
             public void onStartTrackingTouch(final SeekBar seekBar) {
-                Log.i(TAG, "onStartTrackingTouch");
+                //Log.i(TAG, "onStartTrackingTouch");
             }
 
             @Override
             public void onStopTrackingTouch(final SeekBar seekBar) {
-                Log.i(TAG, "onStopTrackingTouch");
+                //Log.i(TAG, "onStopTrackingTouch");
             }
         });
 
-        final PagerAdapter pagerAdapter = new PagerAdapter(getSupportFragmentManager(), list, orderManager);
-        final TextView textView = (TextView) findViewById(R.id.textHint);
-        textView.setText(list.get(pagerAdapter.getDataPosition(position)));
+        init();
+    }
 
-        pager = (ViewPager) findViewById(R.id.pager);
-        pager.setPageMargin(10);
+    private void restoreOrCreate(final Bundle savedInstanceState) {
+        listPosition = savedInstanceState != null ? savedInstanceState.getInt(POSITION, 0) : 0;
 
-        pager.setAdapter(pagerAdapter);
-        pager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(final int i, final float v, final int i1) {
-                Log.i(TAG, "onPageScrolled: i=" + i + ", v=" + v + ", i1=" + i1);
+        if (savedInstanceState != null) {
+            PagerType saved = (PagerType) savedInstanceState.getSerializable(PAGER_TYPE);
+
+            if (saved != null) {
+                pagerType = saved;
             }
 
-            @Override
-            public void onPageSelected(final int i) {
-                Log.i(TAG, "onPageSelected: " + i);
-                seekBar.setProgress(i);
-                textView.setText(list.get(pagerAdapter.getDataPosition(i)));
-            }
+            mediaStorage = (File) savedInstanceState.getSerializable(MEDIA_STORAGE);
+        }
 
-            @Override
-            public void onPageScrollStateChanged(final int i) {
-                Log.i(TAG, "onPageScrollStateChanged: " + i);
-            }
-        });
-        pager.setCurrentItem(position);
+        if (mediaStorage == null) {
+            mediaStorage = availableStorage();
+        }
+    }
+
+    protected void init() {
+        Resources res = getResources();
+        if (mediaStorage == null) {
+            String text = String.format(res.getString(R.string.storage_not_available), res.getString(R.string.storage_photo));
+            textStatus.setText(text);
+        } else {
+            String photosPath = mediaStorage.getAbsolutePath() + CAMERA;
+            list.clear();
+            list.addAll(getMediaList(photosPath, pagerType));
+
+            String text = String.format(res.getString(R.string.storage_info), photosPath, list.size(), res.getString(R.string.storage_photo));
+            textStatus.setText(text);
+        }
+
+        pagerAdapter.setType(pagerType);
+        pagerAdapter.notifyDataSetChanged();
+
+        seekBar.setMax(list.size() - 1);
+        seekBar.setProgress(listPosition);
+
+        textHint.setText(list.get(pagerAdapter.getDataPosition(listPosition)));
     }
 
     @Override
     protected void onSaveInstanceState(final Bundle outState) {
         Log.i(TAG, "onSaveInstanceState: outState=" + outState);
         outState.putInt(POSITION, pager.getCurrentItem());
+        outState.putSerializable(PAGER_TYPE, pagerType);
+        outState.putSerializable(MEDIA_STORAGE, mediaStorage);
         //super.onSaveInstanceState(outState);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Log.i(TAG, "onCreateOptionsMenu");
 
-        Log.i(TAG, "onResume");
+        getMenuInflater().inflate(R.menu.menu, menu);
+        menuPhoto = menu.findItem(R.id.menu_photo);
+        menuVideo = menu.findItem(R.id.menu_video);
+
+        initActionBar(pagerType);
+
+        return true;
     }
 
     @Override
-    protected void onDestroy() {
-        Log.i(TAG, "onDestroy");
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        Log.i(TAG, "onPrepareOptionsMenu");
 
-        super.onDestroy();
+        return true;
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
 
-        Log.i(TAG, "onPause");
+        switch (id) {
+            case R.id.menu_photo:
+                Log.i(TAG, "----- Photo");
+                pagerType = PagerType.PHOTO;
+
+                break;
+
+            case R.id.menu_video:
+                Log.i(TAG, "----- Video");
+                pagerType = PagerType.VIDEO;
+
+                break;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+        initActionBar(pagerType);
+        init();
+        return true;
     }
 
-    @Override
-    public void onStop() {
-        super.onStop();
+    public File availableStorage() {
+        File storage = null;
+        //Доступность SD
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            //Environment.getExternalStorageDirectory() < API Level 8
+            storage = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+        } else {
+            Log.i(TAG, "SD-карта не доступна: " + Environment.getExternalStorageState());
+        }
 
-        Log.i(TAG, "onStop");
+        return storage;
     }
 
-    /**
-     * Retrieve image names list
-     *
-     * @return images list
-     */
-    public List<String> getImageList(AssetManager assetManager) {
+    public List<String> getMediaList(String path, PagerType type) {
         List<String> list = new ArrayList<String>();
 
-        try {
-            String[] files = assetManager.list("images/view");
+        Log.i(TAG, "Absolute path<" + path + ">");
 
-            if (files != null && files.length > 0) {
-                list.addAll(Arrays.asList(files));
+        String[] files = new File(path).list();
+        for (String f : files) {
+            switch (type) {
+                case PHOTO:
+                    if (f.endsWith(EXT_JPG)) {
+                        list.add(f);
+                    }
+
+                    break;
+                case VIDEO:
+                    if (f.endsWith(EXT_3GP) || f.endsWith(EXT_MP4)) {
+                        list.add(f);
+                    }
+
+                    break;
             }
-        } catch (IOException ex) {
-            Log.i(TAG, "read files list error", ex);
         }
 
         return list;
+    }
+
+    public void initActionBar(PagerType type) {
+        final ActionBar actionBar = getActionBar();
+        switch (type) {
+            case PHOTO:
+                actionBar.setIcon(R.drawable.camera);
+                menuVideo.setChecked(false);
+                menuPhoto.setChecked(true);
+
+                break;
+            case VIDEO:
+                actionBar.setIcon(R.drawable.camcorder);
+                menuPhoto.setChecked(false);
+                menuVideo.setChecked(true);
+
+                break;
+        }
     }
 }

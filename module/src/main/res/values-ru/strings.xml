@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="application_name">Просмотр изображений</string>
+    <string name="application_name">Просмотр фотографий и видео</string>
     <string name="crash_report">Отчет о проблеме</string>
+
+    <string name="photo">фото</string>
+    <string name="video">видео</string>
+
+    <string name="storage_not_available">Хранилище %1$s недоступно</string>
+    <string name="storage_info">Хранилище %1$s содержит %2$d %3$s</string>
+    <string name="storage_photo">фото</string>
+    <string name="storage_video">видео</string>
 
 </resources>

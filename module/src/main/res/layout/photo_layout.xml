@@ -8,11 +8,11 @@
 
     <ImageView android:layout_width="match_parent"
                android:layout_height="match_parent"
-               android:id="@+id/imagePlace" android:scaleType="centerCrop"
+               android:id="@+id/photo_place"
+               android:scaleType="centerCrop"
                android:adjustViewBounds="false"
                android:layout_gravity="top|center_horizontal"
                android:padding="5dp"
            />
-
 
 </LinearLayout>

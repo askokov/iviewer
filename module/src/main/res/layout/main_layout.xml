@@ -3,6 +3,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:baselineAligned="false"
@@ -28,9 +29,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"/>
 
-    <fragment android:layout_width="match_parent" android:layout_height="wrap_content"
-              android:id="@+id/socialFragment" class="com.askokov.module.fragment.SocialFragment"
-              tools:layout="@layout/social_layout"
-              android:layout_gravity="bottom"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/textStatus" android:gravity="left"/>
 
 </LinearLayout>

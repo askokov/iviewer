@@ -1,7 +1,7 @@
 package com.askokov.module.order;
 
 /**
- * Show images in reverse mode
+ * Show items in reverse mode
  */
 public class ReverseManager implements OrderManager {
 

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="application_name">Image viewer</string>
+    <string name="application_name">Photo/Video viewer</string>
     <string name="crash_report">Crash report</string>
+
+    <string name="photo">photo</string>
+    <string name="video">video</string>
+
+    <string name="storage_not_available">Storage of %1$s is not available</string>
+    <string name="storage_info">Storage %1$s contains %2$d %3$s</string>
+
+    <string name="storage_photo">photos</string>
+    <string name="storage_video">videos</string>
 
 </resources>

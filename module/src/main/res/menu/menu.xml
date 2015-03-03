@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:tools="http://schemas.android.com/tools"
+            tools:context=".MainActivity">
+
+    <group android:id="@+id/group_storage" android:checkableBehavior="single">
+        <item android:id="@+id/menu_photo"
+              android:orderInCategory="100"
+              android:title="@string/photo"
+              android:checked="true"
+              android:showAsAction="never"/>
+        <item android:id="@+id/menu_video"
+              android:orderInCategory="101"
+              android:title="@string/video"
+              android:showAsAction="never"/>
+    </group>
+
+</menu>
