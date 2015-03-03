@@ -56,6 +56,7 @@ public class MainActivity extends FragmentActivity {
 
         setContentView(R.layout.main_layout);
         restoreOrCreate(savedInstanceState);
+        initActionBarIcon(pagerType, getActionBar());
 
         textStatus = (TextView) findViewById(R.id.textStatus);
         textHint = (TextView) findViewById(R.id.textHint);
@@ -129,7 +130,7 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
-    protected void init() {
+    private void init() {
         Resources res = getResources();
         if (mediaStorage == null) {
             String text = String.format(res.getString(R.string.storage_not_available), res.getString(R.string.storage_photo));
@@ -166,17 +167,15 @@ public class MainActivity extends FragmentActivity {
         Log.i(TAG, "onCreateOptionsMenu");
 
         getMenuInflater().inflate(R.menu.menu, menu);
-        menuPhoto = menu.findItem(R.id.menu_photo);
-        menuVideo = menu.findItem(R.id.menu_video);
-
-        initActionBar(pagerType);
-
         return true;
     }
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         Log.i(TAG, "onPrepareOptionsMenu");
+
+        menuPhoto = menu.findItem(R.id.menu_photo);
+        menuVideo = menu.findItem(R.id.menu_video);
 
         return true;
     }
@@ -207,7 +206,7 @@ public class MainActivity extends FragmentActivity {
         return true;
     }
 
-    public File availableStorage() {
+    private File availableStorage() {
         File storage = null;
         //Доступность SD
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
@@ -220,7 +219,7 @@ public class MainActivity extends FragmentActivity {
         return storage;
     }
 
-    public List<String> getMediaList(String path, PagerType type) {
+    private List<String> getMediaList(String path, PagerType type) {
         List<String> list = new ArrayList<String>();
 
         Log.i(TAG, "Absolute path<" + path + ">");
@@ -246,17 +245,30 @@ public class MainActivity extends FragmentActivity {
         return list;
     }
 
-    public void initActionBar(PagerType type) {
-        final ActionBar actionBar = getActionBar();
+    private void initActionBarIcon(PagerType type, ActionBar actionBar) {
         switch (type) {
             case PHOTO:
                 actionBar.setIcon(R.drawable.camera);
+
+                break;
+            case VIDEO:
+                actionBar.setIcon(R.drawable.camcorder);
+
+                break;
+        }
+    }
+
+    private void initActionBar(PagerType type) {
+        final ActionBar actionBar = getActionBar();
+        initActionBarIcon(type, actionBar);
+
+        switch (type) {
+            case PHOTO:
                 menuVideo.setChecked(false);
                 menuPhoto.setChecked(true);
 
                 break;
             case VIDEO:
-                actionBar.setIcon(R.drawable.camcorder);
                 menuPhoto.setChecked(false);
                 menuVideo.setChecked(true);
 
